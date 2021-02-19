@@ -39,9 +39,14 @@ public static class AnimMath
             if (p < 0) p = 0;
             if (p > 1) p = 1;
         }
-        return Quaternion.Lerp(max - min) * p + min;
+        return Quaternion.Lerp(min , max, p);
     }
 
+   public static Quaternion Slide(Quaternion current, Quaternion target, float percentLeftAfter1Second)
+    {
+        float p = 1 - Mathf.Pow(percentLeftAfter1Second, Time.deltaTime);
+        return AnimMath.Lerp(current, target, p);
+    }
 
     public static float Slide(float current, float target, float percentLeftAfter1Second)
     {

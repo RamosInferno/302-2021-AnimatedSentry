@@ -5,7 +5,9 @@ using UnityEngine;
 
 public class CameraOrbit : MonoBehaviour
 {
-    public PlayerMovement target;
+    public PlayerMovement moveScript;
+    private PlayerTargeting targetScript;
+    private Camera  cam;
 
     private float yaw = 0;
     private float pitch = 0;
@@ -13,23 +15,63 @@ public class CameraOrbit : MonoBehaviour
     public float cameraSenstivityX = 10;
     public float cameraSenstivityY = 10;
 
-    void Start()
+   private void Start()
     {
-
+        targetScript = moveScript.GetComponent<PlayerTargeting>();
+        cam = GetComponent<Camera>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        RotateCamera();
+        PlayerOrbitCamera();
 
-        transform.position = target.position.transform;
+        transform.position = moveScript.transform.position;
 
+        // if aiming set camera's rotation to look as target
+        RotateCamToLookAtTarget();
 
-
+        // "zoom" in the camera
+        ZoomCamera();
     }
 
-    private void RotateCamera()
+    private void ZoomCamera()
+    {
+        float dis = 10;
+        if (IsTargeting()) dis = 3;
+
+        cam.transform.localPosition = AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -dis), .001f);
+    }
+
+    private bool IsTargeting()
+    {
+        return (targetScript && targetScript.target != null && targetScript.wantsToTarget);
+    }
+
+
+    private void RotateCamToLookAtTarget()
+    {
+        // if targeting, set rotation to look at target
+
+        if(targetScript && targetScript.target != null && targetScript.wantsToTarget)
+        {
+            // if targeting, set rotation to look at target
+
+            Vector3 vToTarget = targetScript.target.position - cam.transform.position;
+
+            Quaternion targetRot = Quaternion.LookRotation(vToTarget, Vector3.up);
+        }
+        else
+        {
+            // if NOT targeting
+
+            cam.transform.localRotation = AnimMath.Slide(cam.transform.localRotation, Quaternion.identity, .001f);
+        }
+      
+    }
+
+
+    private void PlayerOrbitCamera()
     {
         float mx = Input.GetAxisRaw("Mouse X");
         float my = Input.GetAxisRaw("Mouse Y");
@@ -37,8 +79,21 @@ public class CameraOrbit : MonoBehaviour
         yaw += mx * cameraSenstivityX;
         pitch += my * cameraSenstivityY;
 
-        pitch = Mathf.Clamp(pitch, -89, 89);
 
-        transform.rotation = Quaternion.Euler(pitch, yaw, 0);
+        if (IsTargeting())
+        {
+            pitch = Mathf.Clamp(pitch, 15, 60);
+
+            float playerYaw = moveScript.transform.eulerAngles.y;
+
+            yaw = Mathf.Clamp(yaw, playerYaw - 40, playerYaw + 40);
+        }
+        else
+        {
+            pitch = Mathf.Clamp(pitch, -10, 89);
+        }
+
+        
+        transform.rotation = AnimMath.Slide(transform.rotation, Quaternion.Euler(pitch, yaw, 0), .001f);
     }
 }
