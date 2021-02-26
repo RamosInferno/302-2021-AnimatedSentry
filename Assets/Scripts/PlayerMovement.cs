@@ -11,7 +11,20 @@ public class PlayerMovement : MonoBehaviour
     public Transform leg1;
     public Transform leg2;
 
+    public float gravityMultiplyer = 10;
+    public float jumpImpulse = -5;
+
     private Vector3 inputDirection = new Vector3();
+
+    private float timeLeftGrounded = 0;
+
+    public bool isGrounded
+    {
+        get // return true is pawn on ground or coyote-time isn't zero
+        {
+            return pawn.isGrounded || timeLeftGrounded > 0;
+        }
+    }
 
     // how fast the player is currently
     private float verticalVelocity = 0;
@@ -26,8 +39,12 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        if (timeLeftGrounded > 0) timeLeftGrounded -= Time.deltaTime;
+
         MovePlayer();
-        WiggleLegs();
+        if (isGrounded) WiggleLegs(); // idle + walk
+        else AirLegs(); // jump (or falling)
     }
 
     private void WiggleLegs()
@@ -63,6 +80,10 @@ public class PlayerMovement : MonoBehaviour
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
+        bool isJumpHeld = Input.GetButton("Jump");
+        bool onJumpPress = Input.GetButtonDown("Jump");
+
+
         //float yawOfInput = Mathf.Atan2(v, h);
         //float yawOfCamera = cam.transform.eulerAngles.y;
 
@@ -78,8 +99,21 @@ public class PlayerMovement : MonoBehaviour
 
         if (inputDirection.sqrMagnitude > 1) inputDirection.Normalize();
 
+
+
+        if(pawn.isGrounded)
+        {
+
+            verticalVelocity = 0; // on ground zero-out vertical-velocity
+
+            if (isJumpHeld)
+            {
+                verticalVelocity = 5;
+            }
+        }
+   
         //apply gravity
-        verticalVelocity += 10 * Time.deltaTime;
+        verticalVelocity += gravityMultiplyer * Time.deltaTime;
 
         // adds lateral movement to vertical movement
         Vector3 moveDelta = inputDirection * walkSpeed + verticalVelocity * Vector3.down;
@@ -87,13 +121,30 @@ public class PlayerMovement : MonoBehaviour
         // move pawn
         CollisionFlags flags = pawn.Move(moveDelta * Time.deltaTime); // 0, -1, 0
 
-        
-        
-        if(pawn.isGrounded)
+
+
+         if(isGrounded)
         {
-
-            verticalVelocity = 0; // on ground zero-out vertical-velocity
-
+            verticalVelocity = 0; // on ground zero-out vertical-velocity 
+            verticalVelocity = 5;
+            timeLeftGrounded = .2f;
+            
+        }
+        
+        if(isGrounded)
+        {
+            if (isJumpHeld)
+            {
+                verticalVelocity = -jumpImpulse; // on ground zero-out vertical-velocity
+                timeLeftGrounded = 0;
+            }
         }
     }
+
+    private void AirLegs()
+    {
+        leg1.localRotation = AnimMath.Slide(leg1.localRotation, Quaternion.Euler(30, 0, 0), .001f);
+        leg2.localRotation = AnimMath.Slide(leg2.localRotation, Quaternion.Euler(-30, 0, 0), .001f);
+    }
+
 }

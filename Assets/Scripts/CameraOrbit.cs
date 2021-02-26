@@ -7,7 +7,7 @@ public class CameraOrbit : MonoBehaviour
 {
     public PlayerMovement moveScript;
     private PlayerTargeting targetScript;
-    private Camera  cam;
+    private Camera cam;
 
     private float yaw = 0;
     private float pitch = 0;
@@ -15,7 +15,12 @@ public class CameraOrbit : MonoBehaviour
     public float cameraSenstivityX = 10;
     public float cameraSenstivityY = 10;
 
-   private void Start()
+    private float shakeIntensity = 0;
+
+
+
+
+    private void Start()
     {
         targetScript = moveScript.GetComponent<PlayerTargeting>();
         cam = GetComponent<Camera>();
@@ -33,7 +38,30 @@ public class CameraOrbit : MonoBehaviour
 
         // "zoom" in the camera
         ZoomCamera();
+
+
+        ShakeCamera();
     }
+
+    public void Shake(float intensity = 1)
+    {
+            shakeIntensity += intensity;
+    }
+
+    private void ShakeCamera()
+    {
+        if (shakeIntensity < 0) shakeIntensity = 0;
+
+        if (shakeIntensity > 0) shakeIntensity -= Time.deltaTime;
+        else return; // shake intensity is 0
+
+        // pick a small random rotation
+        Quaternion targetRot = AnimMath.Lerp(Random.rotation, Quaternion.identity, .99f);
+
+        //cam.transform.localRotation *= targetRot;
+        cam.transform.localRotation = AnimMath.Lerp(cam.transform.localRotation, cam.transform.localRotation * targetRot, shakeIntensity * shakeIntensity);
+    }
+
 
     private void ZoomCamera()
     {
