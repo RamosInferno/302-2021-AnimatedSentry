@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
+    public float movementSpeed;
+
     private void OnTriggerEnter(Collider other)
     {
         PlayerMovement player = other.GetComponent<PlayerMovement>();
@@ -18,4 +20,11 @@ public class Projectile : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+    void Update()
+    {
+        transform.Translate(Vector3.forward * Time.deltaTime * movementSpeed);
+    }
 }
+
+
